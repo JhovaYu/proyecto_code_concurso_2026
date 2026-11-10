@@ -26,7 +26,7 @@ El MVP aquí descrito termina al aprobar o rechazar. Los proyectos, pagos, fondo
 | `comunidad` | Identificador o referencia | La solicitud pertenece a la comunidad representada. Formato pendiente. |
 | `titulo` | Texto | Obligatorio al enviar; no admite solo espacios. |
 | `descripcion` | Texto largo | Obligatoria al enviar; no admite solo espacios. |
-| `categoria` | Texto | Obligatoria al enviar. Catálogo y forma de selección pendientes. |
+| `categoria` | Texto | Obligatoria al enviar; texto libre por ahora. |
 | `poblacion_estimada` | Número entero | Obligatorio al enviar y mayor que cero. |
 | `estado` | Texto enumerado | Uno de los estados de la siguiente tabla. |
 | `mensaje_ong` | Texto | Obligatorio cuando la ONG solicita información adicional. |
@@ -75,7 +75,7 @@ La consulta y visibilidad concretas aún no están implementadas. La tabla indic
 
 Las siguientes pantallas son una propuesta visual para el flujo confirmado; rutas de navegación, diseño y componentes quedan a cargo del frontend.
 
-1. **Acceso:** entrada a la plataforma y mensajes de acceso denegado. El mecanismo de inicio de sesión y recuperación de cuenta está pendiente.
+1. **Acceso:** entrada a la plataforma y mensajes de acceso denegado. Se acordaron sesiones de Django con cookies; el inicio de sesión y la recuperación de cuenta aún no están implementados.
 2. **Solicitudes de la comunidad:** lista simulada con título, categoría, estado y acceso al detalle; estados de carga y lista vacía.
 3. **Crear o editar solicitud:** comunidad, título, descripción, categoría y población estimada; acciones para guardar borrador o enviar; errores por campo. Confirmar visualmente que al editar durante la revisión vuelve a enviada.
 4. **Detalle para el representante:** datos, estado, mensaje de la ONG cuando corresponda, formulario de respuesta y, al resolverse, justificación.
@@ -131,7 +131,7 @@ Ejemplos **propuestos** de cuerpos para acciones:
 {"aprobar": true, "justificacion": "La solicitud cumple los criterios revisados."}
 ```
 
-Se propone que los errores permitan distinguir validación por campo, falta de autenticación, falta de permisos, recurso inexistente y cambio de estado no permitido. El formato exacto de errores, códigos HTTP, paginación, versionado y mecanismo de autenticación están pendientes de acuerdo. En particular, el cliente nunca debe enviar un `rol`, `autorizado` o lista de comunidades como prueba de identidad.
+Se propone que los errores permitan distinguir validación por campo, falta de autenticación, falta de permisos, recurso inexistente y cambio de estado no permitido. El formato exacto de errores, códigos HTTP, paginación y versionado están pendientes de acuerdo. En particular, el cliente nunca debe enviar un `rol`, `autorizado` o lista de comunidades como prueba de identidad.
 
 ## Casos para datos simulados
 
@@ -139,8 +139,8 @@ Para construir y revisar las vistas, crear ejemplos ficticios de: borrador incom
 
 ## Decisiones pendientes para integrar
 
-- Mecanismo de autenticación y recuperación de acceso.
-- Datos de comunidad y usuario que necesita visualizar cada actor; identificadores y catálogo de categorías.
+- Detalles de implementación de sesiones y recuperación de acceso.
+- Datos de comunidad y usuario que necesita visualizar cada actor e identificadores.
 - Rutas definitivas, nombres de campos, formato de errores, paginación y filtros.
 - Consulta del historial completo, fechas, responsables, adjuntos y notificaciones.
 - Reglas de cancelación o reapertura y permisos de consulta detallados.

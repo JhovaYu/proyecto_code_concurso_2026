@@ -47,10 +47,12 @@ class FlujoTests(unittest.TestCase):
         incompleta = DatosSolicitud("", "Descripción", "Agua", 20)
         with self.assertRaises(ErrorFlujo):
             enviar_solicitud(self.representante, editar_solicitud(self.representante, self.solicitud, incompleta))
-        modificada = editar_solicitud(self.representante, self.en_revision(), incompleta)
-        self.assertEqual(modificada.estado, Estado.ENVIADA)
-        with self.assertRaises(ErrorFlujo):
-            resolver_solicitud(self.ong, modificada, True, "Sí")
+        enviada = enviar_solicitud(self.representante, self.solicitud)
+        revision = iniciar_revision(self.ong, enviada)
+        pendiente = solicitar_informacion(self.ong, revision, "Aclara la necesidad")
+        for solicitud in (enviada, revision, pendiente):
+            with self.subTest(estado=solicitud.estado), self.assertRaises(ErrorFlujo):
+                editar_solicitud(self.representante, solicitud, incompleta)
 
     def test_mensajes_obligatorios(self):
         revision = self.en_revision()
@@ -59,3 +61,37 @@ class FlujoTests(unittest.TestCase):
         pendiente = solicitar_informacion(self.ong, revision, "¿Cuántas personas?")
         with self.assertRaises(ErrorFlujo):
             responder_informacion(self.representante, pendiente, "")
+
+    def test_cuentas_no_autorizadas_no_pueden_operar(self):
+        representante = Actor("rep", False, comunidades_representadas=frozenset({"comunidad"}))
+        ong = Actor("ong", False, es_ong=True)
+        enviada = enviar_solicitud(self.representante, self.solicitud)
+        revision = iniciar_revision(self.ong, enviada)
+        pendiente = solicitar_informacion(self.ong, revision, "Aclara la necesidad")
+        for accion in (
+            lambda: crear_solicitud(representante, "comunidad", self.datos),
+            lambda: editar_solicitud(representante, revision, self.datos),
+            lambda: responder_informacion(representante, pendiente, "Respuesta"),
+            lambda: iniciar_revision(ong, enviada),
+            lambda: solicitar_informacion(ong, revision, "Pregunta"),
+            lambda: resolver_solicitud(ong, revision, True, "Motivo"),
+        ):
+            with self.subTest(accion=accion), self.assertRaises(ErrorFlujo):
+                accion()
+
+    def test_modificacion_en_revision_reinicia_revision(self):
+        modificada = editar_solicitud(self.representante, self.en_revision(), self.datos)
+        self.assertEqual(modificada.estado, Estado.ENVIADA)
+        with self.assertRaises(ErrorFlujo):
+            resolver_solicitud(self.ong, modificada, True, "Motivo")
+        self.assertEqual(iniciar_revision(self.ong, modificada).estado, Estado.EN_REVISION)
+
+    def test_ambas_resoluciones_exigen_justificacion_y_bloquean_edicion(self):
+        for aprobar in (True, False):
+            with self.subTest(aprobar=aprobar):
+                revision = self.en_revision()
+                with self.assertRaises(ErrorFlujo):
+                    resolver_solicitud(self.ong, revision, aprobar, "  ")
+                resuelta = resolver_solicitud(self.ong, revision, aprobar, "Motivo")
+                with self.assertRaises(ErrorFlujo):
+                    editar_solicitud(self.representante, resuelta, self.datos)

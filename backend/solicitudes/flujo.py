@@ -37,6 +37,8 @@ class Solicitud:
     justificacion: str = ""
     mensaje_ong: str = ""
     respuesta_representante: str = ""
+    evaluaciones: tuple = ()
+    requiere_nueva_evaluacion: bool = False
 
 
 def exigir_representante(actor: Actor, comunidad: str) -> None:
@@ -58,8 +60,13 @@ def editar_solicitud(actor: Actor, solicitud: Solicitud, datos: DatosSolicitud) 
     exigir_representante(actor, solicitud.comunidad)
     if solicitud.estado in (Estado.APROBADA, Estado.RECHAZADA):
         raise ErrorFlujo("Una solicitud resuelta no puede modificarse.")
+    if solicitud.estado != Estado.BORRADOR:
+        errores = validar_envio(datos)
+        if errores:
+            raise ErrorFlujo(f"La solicitud está incompleta: {', '.join(errores)}.")
     estado = Estado.ENVIADA if solicitud.estado == Estado.EN_REVISION else solicitud.estado
-    return replace(solicitud, datos=datos, estado=estado)
+    return replace(solicitud, datos=datos, estado=estado,
+                   requiere_nueva_evaluacion=bool(solicitud.evaluaciones))
 
 
 def enviar_solicitud(actor: Actor, solicitud: Solicitud) -> Solicitud:
@@ -105,6 +112,8 @@ def resolver_solicitud(actor: Actor, solicitud: Solicitud, aprobar: bool, justif
     exigir_ong(actor)
     if solicitud.estado != Estado.EN_REVISION:
         raise ErrorFlujo("Solo se puede resolver una solicitud en revisión.")
+    if solicitud.requiere_nueva_evaluacion:
+        raise ErrorFlujo("La solicitud fue modificada y requiere una nueva evaluación.")
     if not isinstance(aprobar, bool):
         raise ErrorFlujo("La resolución debe indicar aprobación o rechazo.")
     if not isinstance(justificacion, str) or not justificacion.strip():
